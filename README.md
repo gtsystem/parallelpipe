@@ -1,0 +1,2 @@
+# parallelpipe
+Pipeline parallelization library
