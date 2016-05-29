@@ -1,5 +1,5 @@
 import unittest
-from parallelpipe import TaskPool, TaskException, task_pool, map_pool
+from parallelpipe import Stage, TaskException, stage, map_stage
 
 def t1(x, fail_at=None):
     """Produce values from the given input iterator.
@@ -30,13 +30,13 @@ class T2(object):
         for item in input:
             yield item + self.n
 
-class TestTaskPool(unittest.TestCase):
+class TestStage(unittest.TestCase):
     def setUp(self):
         pass
 
     def test_one(self):
         """Only producer configuration"""
-        producer = TaskPool(t1, xrange(1000)).setup(workers=4, qsize=10)
+        producer = Stage(t1, xrange(1000)).setup(workers=4, qsize=10)
         res = list(t for t in producer.results())
 
         self.assertEquals(max(res), 999)
@@ -51,14 +51,14 @@ class TestTaskPool(unittest.TestCase):
         self.assertEquals(len(res), 1000*4) # we are running 4 parallel producers
 
         # task with one result
-        producer = TaskPool(t3, xrange(1000), sum).setup(workers=4, qsize=10)
+        producer = Stage(t3, xrange(1000), sum).setup(workers=4, qsize=10)
         res = producer.execute()
         self.assertEquals(res, sum(xrange(1000)))
 
     def test_two(self):
         """Producer/Consumer configuration"""
-        producer = TaskPool(t1, xrange(1000)).setup(workers=4, qsize=10)
-        consumer = TaskPool(t2, 5).setup(workers=4, qsize=1000)
+        producer = Stage(t1, xrange(1000)).setup(workers=4, qsize=10)
+        consumer = Stage(t2, 5).setup(workers=4, qsize=1000)
         pipe = producer | consumer
         res = list(t for t in pipe.results())
 
@@ -78,8 +78,8 @@ class TestTaskPool(unittest.TestCase):
         """Producer/Consumer configuration. One of the task is actually a method of a class
         instance"""
         job = T2(5).produce
-        producer = TaskPool(t1, xrange(1000)).setup(workers=4, qsize=10)
-        consumer = TaskPool(job).setup(workers=4, qsize=1000)
+        producer = Stage(t1, xrange(1000)).setup(workers=4, qsize=10)
+        consumer = Stage(job).setup(workers=4, qsize=1000)
         pipe = producer | consumer
         res = list(t for t in pipe.results())
 
@@ -89,8 +89,8 @@ class TestTaskPool(unittest.TestCase):
 
     def test_two_reduce(self):
         """Producer/Reducer configuration"""
-        producer = TaskPool(t1, xrange(1000)).setup(workers=4, qsize=10)
-        reducer = TaskPool(t3, sum).setup(workers=1, qsize=3)
+        producer = Stage(t1, xrange(1000)).setup(workers=4, qsize=10)
+        reducer = Stage(t3, sum).setup(workers=1, qsize=3)
         pipe = producer | reducer
         res = list(t for t in pipe.results())
 
@@ -106,9 +106,9 @@ class TestTaskPool(unittest.TestCase):
 
     def test_three_reduce(self):
         """Producer/Mapper/Reducer configuration"""
-        producer = TaskPool(t1, xrange(1000)).setup(workers=4, qsize=10)
-        mapper = TaskPool(t2, 5).setup(workers=4, qsize=1000)
-        reducer = TaskPool(t3, sum).setup(workers=2, qsize=3)
+        producer = Stage(t1, xrange(1000)).setup(workers=4, qsize=10)
+        mapper = Stage(t2, 5).setup(workers=4, qsize=1000)
+        reducer = Stage(t3, sum).setup(workers=2, qsize=3)
         pipe = producer | mapper | reducer
         res = list(t for t in pipe.results())
 
@@ -119,9 +119,9 @@ class TestTaskPool(unittest.TestCase):
 
     def test_exception_propagation(self):
         """The mapper will fail this time"""
-        producer = TaskPool(t1, xrange(1000)).setup(workers=2, qsize=10)
-        mapper = TaskPool(t2, 5, 200).setup(workers=6, qsize=1000)
-        reducer = TaskPool(t3, sum).setup(workers=2, qsize=3)
+        producer = Stage(t1, xrange(1000)).setup(workers=2, qsize=10)
+        mapper = Stage(t2, 5, 200).setup(workers=6, qsize=1000)
+        reducer = Stage(t3, sum).setup(workers=2, qsize=3)
         pipe = producer | mapper | reducer
 
         with self.assertRaisesRegexp(TaskException, "failed at 200"):
@@ -129,7 +129,7 @@ class TestTaskPool(unittest.TestCase):
                 pass
 
 
-        producer = TaskPool(t1, xrange(1000), 10).setup(workers=2, qsize=10)
+        producer = Stage(t1, xrange(1000), 10).setup(workers=2, qsize=10)
         pipe = producer | mapper | reducer
 
         with self.assertRaisesRegexp(TaskException, "failed at 10"):
@@ -137,14 +137,14 @@ class TestTaskPool(unittest.TestCase):
                 pass
 
     def test_task_decorator(self):
-        @task_pool(workers=4)
+        @stage(workers=4)
         def my_task(it, even=True):
             condition = 0 if even else 1
             for item in it:
                 if item % 2 == condition:
                     yield item
         
-        @task_pool(workers=1)
+        @stage(workers=1)
         def consume(it):
             yield max(it)
         
@@ -155,7 +155,7 @@ class TestTaskPool(unittest.TestCase):
         self.assertEqual(res, 999)
 
     def test_map_decorator(self):
-        @map_pool(workers=4)
+        @map_stage(workers=4)
         def my_task(item, x):
             return item + x
         
@@ -165,12 +165,12 @@ class TestTaskPool(unittest.TestCase):
             
             return item * 2
         
-        @task_pool()
+        @stage()
         def consume(n):
             yield sum(n)
         
-        fail1 = map_pool(workers=4)(my_task_fail)
-        fail2 = map_pool(workers=4, filter_errors=True)(my_task_fail)
+        fail1 = map_stage(workers=4)(my_task_fail)
+        fail2 = map_stage(workers=4, filter_errors=True)(my_task_fail)
         
         res = (xrange(1000) | my_task(5) | consume).execute()
         self.assertEqual(res, 504500)

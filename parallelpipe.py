@@ -82,7 +82,7 @@ class Task(Process):
                 put_item(EXIT)
             self._que_err.put(EXIT)
 
-class TaskPool(object):
+class Stage(object):
     """Represent a pool of parallel tasks that perform the same type of action on the input."""
     def __init__(self, target, *args, **kwargs):
         if not callable(target):
@@ -155,34 +155,34 @@ class TaskPool(object):
     __repr__ = __str__
 
     def __or__(self, b):
-        return PoolGroup([self, b])
+        return Pipeline([self, b])
 
     def __ror__(self, b):
         if isinstance(b, collections.Iterable):
             def producer(x):
                 return x
-            return TaskPool(producer, b) | self
+            return Stage(producer, b) | self
         raise ValueError("Pipe input have to be iterable")
 
     def results(self):
         """Create a single pooltask group and return all results on the main thread"""
-        return PoolGroup([self]).results()
+        return Pipeline([self]).results()
 
     def execute(self):
         """Create a single pooltask group and return the result on the main thread"""
-        return PoolGroup([self]).execute()
+        return Pipeline([self]).execute()
 
     def __call__(self, *args, **kwargs):
         self._args = args
         self._kwargs = kwargs
         return self
 
-def task_pool(workers=1, qsize=0):
+def stage(workers=1, qsize=0):
     def decorator(f):
-        return TaskPool(f).setup(workers=workers, qsize=qsize)
+        return Stage(f).setup(workers=workers, qsize=qsize)
     return decorator
 
-def map_pool(workers=1, qsize=0, filter_errors=False):
+def map_stage(workers=1, qsize=0, filter_errors=False):
     def decorator(f):
         if filter_errors:
             def map_task(it, *args, **argv):
@@ -196,19 +196,19 @@ def map_pool(workers=1, qsize=0, filter_errors=False):
                 for item in it:
                     yield f(item, *args, **argv)
         map_task.__name__ = "pipe_map-%s" % f.__name__
-        return TaskPool(map_task).setup(workers=workers, qsize=qsize)
+        return Stage(map_task).setup(workers=workers, qsize=qsize)
     return decorator
 
 class TaskException(Exception):
     """Base class of exception propagated from one of the tasks"""
     pass
 
-class PoolGroup(list):
-    """Represent an ordered list of connected TaskPools"""
+class Pipeline(list):
+    """Represent an ordered list of connected Stages"""
     def __or__(self, b):
-        if isinstance(b, TaskPool):
+        if isinstance(b, Stage):
             self.append(b)
-        elif isinstance(b, PoolGroup):
+        elif isinstance(b, Pipeline):
             self.extend(b)
         return self
 

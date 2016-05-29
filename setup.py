@@ -10,5 +10,5 @@ setup(
     url='https://github.com/gtsystem/parallelpipe',
     license='See LICENSE.txt',
     description='Pipeline parallelization library',
-    long_description=open('README.txt').read(),
+    long_description=open('README.md').read(),
 )
