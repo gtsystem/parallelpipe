@@ -1,7 +1,7 @@
 # parallelpipe
 parallelpipe is a pipeline parallelization library for Python.
 
-A pipeline is composed by one or more stages. Each stage take as an input the output of the previous stage and perform some operations on it like map, filter, reduce, etc. This is an extension of the normal producer/consumer pattern where we can have multiple stages. Every stage receive the input data in a queue and push the results to another queue that is connected with the next stage. 
+A pipeline is composed by one or more stages. Each stage take the output of the previous stage  as an input and performs some operations on it like map, filter, reduce, etc. This is an extension of the normal producer/consumer pattern where we can have multiple stages. Every stage receives the input data in a queue and push the results to another queue that is connected with the next stage. 
 
 ![](documentation/pipeline2.png)
 
@@ -47,13 +47,15 @@ for title in pipe.results():
     print(title)
 ```
 
-Again this second stage will start processing the content as soon as is available and yield is output.
+Again this second stage will start processing the content as soon as it is available and yield his output.
 Notice that also this task is parallelized, since we set workers to 2.
 As you can see this stage is not an exact map, since  the number of titles returned could be less then the number of document (we check for the presence of the title tag).
 
 Let's add now one more stage to return the most common title:
 
 ```python
+from collections import Counter
+
 @stage()
 def most_common(titles):
     commons = Counter(titles).most_common(1)
@@ -118,9 +120,11 @@ add_n.setup(workers=2, qsize=0)
 
 ### Use the Stage class directly
 
-So far we built stages decorating functions, but we can also use the Stage class directly: 
+So far we built stages using decorators on functions, but we can also use the Stage class directly: 
 
 ```python
+from parallelpipe import Stage
+
 def add_n(input, n):
     for number in input:
          yield number + n
@@ -135,7 +139,7 @@ When we use the stage class explictly we can use ``setup()`` to configure how ma
 pipe = Stage(range, 10).setup(qsize=5) | Stage(add_n, 5).setup(workers=2)
 ```
 
-The ``setup()`` method return the stage itself, so we can set it up during the pipe definition.
+The ``setup()`` method return the stage itself, so we can set it up during the pipeline definition.
 
 ### Exception handling
 
