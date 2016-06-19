@@ -36,7 +36,7 @@ class TestStage(unittest.TestCase):
 
     def test_one(self):
         """Only producer configuration"""
-        producer = Stage(t1, xrange(1000)).setup(workers=4, qsize=10)
+        producer = Stage(t1, range(1000)).setup(workers=4, qsize=10)
         res = list(t for t in producer.results())
 
         self.assertEquals(max(res), 999)
@@ -51,13 +51,13 @@ class TestStage(unittest.TestCase):
         self.assertEquals(len(res), 1000*4) # we are running 4 parallel producers
 
         # task with one result
-        producer = Stage(t3, xrange(1000), sum).setup(workers=4, qsize=10)
+        producer = Stage(t3, range(1000), sum).setup(workers=4, qsize=10)
         res = producer.execute()
-        self.assertEquals(res, sum(xrange(1000)))
+        self.assertEquals(res, sum(range(1000)))
 
     def test_two(self):
         """Producer/Consumer configuration"""
-        producer = Stage(t1, xrange(1000)).setup(workers=4, qsize=10)
+        producer = Stage(t1, range(1000)).setup(workers=4, qsize=10)
         consumer = Stage(t2, 5).setup(workers=4, qsize=1000)
         pipe = producer | consumer
         res = list(t for t in pipe.results())
@@ -66,7 +66,7 @@ class TestStage(unittest.TestCase):
         self.assertEquals(min(res), 5)
         self.assertEquals(len(res), 1000*4) # we are running 4 parallel producers
 
-        pipe = xrange(1000) | consumer
+        pipe = range(1000) | consumer
         res = list(t for t in pipe.results())
         
         self.assertEquals(max(res), 1004)
@@ -78,7 +78,7 @@ class TestStage(unittest.TestCase):
         """Producer/Consumer configuration. One of the task is actually a method of a class
         instance"""
         job = T2(5).produce
-        producer = Stage(t1, xrange(1000)).setup(workers=4, qsize=10)
+        producer = Stage(t1, range(1000)).setup(workers=4, qsize=10)
         consumer = Stage(job).setup(workers=4, qsize=1000)
         pipe = producer | consumer
         res = list(t for t in pipe.results())
@@ -89,12 +89,12 @@ class TestStage(unittest.TestCase):
 
     def test_two_reduce(self):
         """Producer/Reducer configuration"""
-        producer = Stage(t1, xrange(1000)).setup(workers=4, qsize=10)
+        producer = Stage(t1, range(1000)).setup(workers=4, qsize=10)
         reducer = Stage(t3, sum).setup(workers=1, qsize=3)
         pipe = producer | reducer
         res = list(t for t in pipe.results())
 
-        expected = sum(xrange(1000)) * 4
+        expected = sum(range(1000)) * 4
 
         self.assertEquals(len(res), 1)
         self.assertEquals(res[0], expected)
@@ -106,20 +106,20 @@ class TestStage(unittest.TestCase):
 
     def test_three_reduce(self):
         """Producer/Mapper/Reducer configuration"""
-        producer = Stage(t1, xrange(1000)).setup(workers=4, qsize=10)
+        producer = Stage(t1, range(1000)).setup(workers=4, qsize=10)
         mapper = Stage(t2, 5).setup(workers=4, qsize=1000)
         reducer = Stage(t3, sum).setup(workers=2, qsize=3)
         pipe = producer | mapper | reducer
         res = list(t for t in pipe.results())
 
-        expected = sum(xrange(5, 1005)) * 4
+        expected = sum(range(5, 1005)) * 4
 
         self.assertEquals(len(res), 2)
         self.assertEquals(sum(res), expected)
 
     def test_exception_propagation(self):
         """The mapper will fail this time"""
-        producer = Stage(t1, xrange(1000)).setup(workers=2, qsize=10)
+        producer = Stage(t1, range(1000)).setup(workers=2, qsize=10)
         mapper = Stage(t2, 5, 200).setup(workers=6, qsize=1000)
         reducer = Stage(t3, sum).setup(workers=2, qsize=3)
         pipe = producer | mapper | reducer
@@ -129,7 +129,7 @@ class TestStage(unittest.TestCase):
                 pass
 
 
-        producer = Stage(t1, xrange(1000), 10).setup(workers=2, qsize=10)
+        producer = Stage(t1, range(1000), 10).setup(workers=2, qsize=10)
         pipe = producer | mapper | reducer
 
         with self.assertRaisesRegexp(TaskException, "failed at 10"):
@@ -148,10 +148,10 @@ class TestStage(unittest.TestCase):
         def consume(it):
             yield max(it)
         
-        res = (xrange(1000) | my_task | consume).execute()
+        res = (range(1000) | my_task | consume).execute()
         self.assertEqual(res, 998)
         
-        res = (xrange(1000) | my_task(even=False) | consume).execute()
+        res = (range(1000) | my_task(even=False) | consume).execute()
         self.assertEqual(res, 999)
 
     def test_map_decorator(self):
@@ -172,14 +172,14 @@ class TestStage(unittest.TestCase):
         fail1 = map_stage(workers=4)(my_task_fail)
         fail2 = map_stage(workers=4, filter_errors=True)(my_task_fail)
         
-        res = (xrange(1000) | my_task(5) | consume).execute()
+        res = (range(1000) | my_task(5) | consume).execute()
         self.assertEqual(res, 504500)
         
-        res = (xrange(1000) | fail2(5) | consume).execute()
+        res = (range(1000) | fail2(5) | consume).execute()
         self.assertEqual(res, 10)
         
         with self.assertRaisesRegexp(TaskException, "failure"):
-            (xrange(1000) | fail1(5) | consume).execute()
+            (range(1000) | fail1(5) | consume).execute()
         
 
 if __name__ == '__main__':

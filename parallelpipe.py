@@ -78,7 +78,7 @@ class Task(Process):
             raise
 
         finally:
-            for i in xrange(self._num_followers):
+            for i in range(self._num_followers):
                 put_item(EXIT)
             self._que_err.put(EXIT)
 
@@ -116,7 +116,7 @@ class Stage(object):
         """Initialise and return the list of processes associated with this pool"""
         if self._processes is None:
             self._processes = []
-            for p in xrange(self.workers):
+            for p in range(self.workers):
                 t = Task(self._target, self._args, self._kwargs)
                 t.name = "%s-%d" % (self.target_name, p)
                 self._processes.append(t)
