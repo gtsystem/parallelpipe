@@ -1,4 +1,7 @@
 # parallelpipe
+
+[![Build Status](https://travis-ci.org/gtsystem/parallelpipe.svg?branch=master)](https://travis-ci.org/gtsystem/parallelpipe)
+
 parallelpipe is a pipeline parallelization library for Python.
 
 A pipeline is composed by one or more stages. Each stage take the output of the previous stage  as an input and performs some operations on it like map, filter, reduce, etc. This is an extension of the normal producer/consumer pattern where we can have multiple stages. Every stage receives the input data in a queue and push the results to another queue that is connected with the next stage. 
