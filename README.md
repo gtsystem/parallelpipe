@@ -14,7 +14,7 @@ import requests
 @stage(workers=4)
 def fetch_urls(urls):
     for url in urls:
-      	 result = requests.get(url)
+      	result = requests.get(url)
         yield result.content
 ```
 
@@ -102,7 +102,7 @@ Setting an output queue limit can be useful if the current stage can produce muc
 
 ```python
 # only 30 elements can queue in output before blocking this stage
-@stage(workers=4, qsize=30) 
+@stage(workers=4, qsize=30)
 def add_n(input, n):
 	for number in input:
 		 yield number + n
