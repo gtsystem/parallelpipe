@@ -39,21 +39,21 @@ class TestStage(unittest.TestCase):
         producer = Stage(t1, range(1000)).setup(workers=4, qsize=10)
         res = list(t for t in producer.results())
 
-        self.assertEquals(max(res), 999)
-        self.assertEquals(min(res), 0)
-        self.assertEquals(len(res), 1000*4) # we are running 4 parallel producers
+        self.assertEqual(max(res), 999)
+        self.assertEqual(min(res), 0)
+        self.assertEqual(len(res), 1000*4) # we are running 4 parallel producers
 
         # let's reuse a pipe again
         res = list(t for t in producer.results())
 
-        self.assertEquals(max(res), 999)
-        self.assertEquals(min(res), 0)
-        self.assertEquals(len(res), 1000*4) # we are running 4 parallel producers
+        self.assertEqual(max(res), 999)
+        self.assertEqual(min(res), 0)
+        self.assertEqual(len(res), 1000*4) # we are running 4 parallel producers
 
         # task with one result
         producer = Stage(t3, range(1000), sum).setup(workers=4, qsize=10)
         res = producer.execute()
-        self.assertEquals(res, sum(range(1000)))
+        self.assertEqual(res, sum(range(1000)))
 
     def test_two(self):
         """Producer/Consumer configuration"""
@@ -62,16 +62,16 @@ class TestStage(unittest.TestCase):
         pipe = producer | consumer
         res = list(t for t in pipe.results())
 
-        self.assertEquals(max(res), 1004)
-        self.assertEquals(min(res), 5)
-        self.assertEquals(len(res), 1000*4) # we are running 4 parallel producers
+        self.assertEqual(max(res), 1004)
+        self.assertEqual(min(res), 5)
+        self.assertEqual(len(res), 1000*4) # we are running 4 parallel producers
 
         pipe = range(1000) | consumer
         res = list(t for t in pipe.results())
         
-        self.assertEquals(max(res), 1004)
-        self.assertEquals(min(res), 5)
-        self.assertEquals(len(res), 1000) # we are running 4 parallel producers
+        self.assertEqual(max(res), 1004)
+        self.assertEqual(min(res), 5)
+        self.assertEqual(len(res), 1000) # we are running 4 parallel producers
         
 
     def test_two_class_instance(self):
@@ -83,9 +83,9 @@ class TestStage(unittest.TestCase):
         pipe = producer | consumer
         res = list(t for t in pipe.results())
 
-        self.assertEquals(max(res), 1004)
-        self.assertEquals(min(res), 5)
-        self.assertEquals(len(res), 1000*4) # we are running 4 parallel producers
+        self.assertEqual(max(res), 1004)
+        self.assertEqual(min(res), 5)
+        self.assertEqual(len(res), 1000*4) # we are running 4 parallel producers
 
     def test_two_reduce(self):
         """Producer/Reducer configuration"""
@@ -96,13 +96,13 @@ class TestStage(unittest.TestCase):
 
         expected = sum(range(1000)) * 4
 
-        self.assertEquals(len(res), 1)
-        self.assertEquals(res[0], expected)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0], expected)
 
         # let's try execute here..
 
         res = pipe.execute()
-        self.assertEquals(res, expected)
+        self.assertEqual(res, expected)
 
     def test_three_reduce(self):
         """Producer/Mapper/Reducer configuration"""
@@ -114,8 +114,8 @@ class TestStage(unittest.TestCase):
 
         expected = sum(range(5, 1005)) * 4
 
-        self.assertEquals(len(res), 2)
-        self.assertEquals(sum(res), expected)
+        self.assertEqual(len(res), 2)
+        self.assertEqual(sum(res), expected)
 
     def test_exception_propagation(self):
         """The mapper will fail this time"""

@@ -8,6 +8,12 @@ from multiprocessing import Process, Queue
 from time import sleep
 import inspect
 import collections
+from collections.abc import Iterable
+
+import dill
+
+def identity(x):
+    return x
 
 class EXIT:
     """This represent a unique value to be sent in the queue to stop the iteration"""
@@ -25,7 +31,7 @@ class Task(Process):
     """Represent one single task executing a callable in a subrocess"""
     def __init__(self, callable, args=(), kwargs={}):
         super(Task, self).__init__()
-        self._callable = callable
+        self._callable = dill.dumps(callable)
         self._args = args
         self._kwargs = kwargs
         self._que_in = None
@@ -57,12 +63,12 @@ class Task(Process):
         """Execute the task on all the input and send the needed number of EXIT at the end"""
         input = self._consume()
         put_item = self._que_out.put
-        
+        func = dill.loads(self._callable)
         try:
             if input is None: # producer
-                res = self._callable(*self._args, **self._kwargs)
+                res = func(*self._args, **self._kwargs)
             else:
-                res = self._callable(input, *self._args, **self._kwargs)
+                res = func(input, *self._args, **self._kwargs)
             if res != None:
                 for item in res:
                     put_item(item)
@@ -158,10 +164,8 @@ class Stage(object):
         return Pipeline([self, b])
 
     def __ror__(self, b):
-        if isinstance(b, collections.Iterable):
-            def producer(x):
-                return x
-            return Stage(producer, b) | self
+        if isinstance(b, Iterable):
+            return Stage(identity, b) | self
         raise ValueError("Pipe input have to be iterable")
 
     def results(self):

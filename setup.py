@@ -12,23 +12,25 @@ except Exception as e:
 
 setup(
     name='parallelpipe',
-    version='0.2.6',
+    version='0.3.0',
     author='Giuseppe Tribulato',
     author_email='gtsystem@gmail.com',
     py_modules=['parallelpipe'],
     url='https://github.com/gtsystem/parallelpipe',
     license='MIT',
     description='Pipeline parallelization library',
+    install_requires=['dill'],
     long_description=long_description,
     classifiers=(
         'Intended Audience :: Developers',
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5'
+        'Programming Language :: Python :: 3.7'
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11'
     ),
 )
