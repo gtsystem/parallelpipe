@@ -19,6 +19,7 @@ setup(
     url='https://github.com/gtsystem/parallelpipe',
     license='MIT',
     description='Pipeline parallelization library',
+    long_description_content_type='text/markdown',
     install_requires=['dill'],
     long_description=long_description,
     classifiers=(
