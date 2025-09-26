@@ -5,10 +5,8 @@ producer - map - map2 /
          \ map /
 """
 from multiprocessing import Process, Queue
-from time import sleep
-import inspect
-import collections
 from collections.abc import Iterable
+import time
 
 import dill
 
@@ -87,6 +85,11 @@ class Task(Process):
             for i in range(self._num_followers):
                 put_item(EXIT)
             self._que_err.put(EXIT)
+            while not self._que_out.empty():
+                time.sleep(0.1)
+            while not self._que_err.empty():
+                time.sleep(0.1)
+
 
 class Stage(object):
     """Represent a pool of parallel tasks that perform the same type of action on the input."""
