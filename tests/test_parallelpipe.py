@@ -1,5 +1,6 @@
 import unittest
 from parallelpipe import Stage, TaskException, stage, map_stage
+from time import sleep
 
 def t1(x, fail_at=None):
     """Produce values from the given input iterator.
@@ -124,7 +125,7 @@ class TestStage(unittest.TestCase):
         reducer = Stage(t3, sum).setup(workers=2, qsize=3)
         pipe = producer | mapper | reducer
 
-        with self.assertRaisesRegexp(TaskException, "failed at 200"):
+        with self.assertRaisesRegex(TaskException, "failed at 200"):
             for res in pipe.results():
                 pass
 
@@ -132,7 +133,7 @@ class TestStage(unittest.TestCase):
         producer = Stage(t1, range(1000), 10).setup(workers=2, qsize=10)
         pipe = producer | mapper | reducer
 
-        with self.assertRaisesRegexp(TaskException, "failed at 10"):
+        with self.assertRaisesRegex(TaskException, "failed at 10"):
             for res in pipe.results():
                 pass
 
@@ -178,10 +179,37 @@ class TestStage(unittest.TestCase):
         res = (range(1000) | fail2(5) | consume).execute()
         self.assertEqual(res, 10)
         
-        with self.assertRaisesRegexp(TaskException, "failure"):
+        with self.assertRaisesRegex(TaskException, "failure"):
             (range(1000) | fail1(5) | consume).execute()
+
+    def test_slow_second_stage(self):
         
+        @stage(workers=2)
+        def mapit(it):
+            for item in it:
+                yield item + 1
+        
+        @stage(workers=1)
+        def reduce(it):
+            sleep(3)  # simulate a long startup time
+            tot = 0
+            for item in it:
+                tot += item
+                sleep(2)
+                yield 5
+            yield tot
+
+        @stage(workers=2)
+        def write(it):
+            for item in it:
+                yield item
+
+        res = list(([1] | mapit | reduce | write).results())
+        self.assertEqual(res, [5, 2])
+
 
 if __name__ == '__main__':
+    import multiprocessing
+    multiprocessing.set_start_method('fork', force=False)
     unittest.main()
 
